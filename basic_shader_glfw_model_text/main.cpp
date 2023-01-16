@@ -680,6 +680,20 @@ void mainLoop(GLFWwindow* window)
     }
 }
 
+static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos){
+    std::cout<<"Cursor xpos: "<<xpos<<" ypos: "<<ypos<<std::endl;
+}
+
+static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods){
+    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+        double xpos, ypos;
+
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        std::cout<<"cursor position at: xpos: "<<xpos<<" ypos: "<<ypos<<std::endl;
+    }
+}
+
 int main(int argc, char** argv)   // Create Main Function For Bringing It All Together
 {
     if(argc != 4){
@@ -728,6 +742,8 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
 
     glfwSetKeyCallback(window, keyboard);
     glfwSetWindowSizeCallback(window, reshape);
+
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     reshape(window, gWidth, gHeight); // need to call this once ourselves
     mainLoop(window); // this does not return unless the window is closed
