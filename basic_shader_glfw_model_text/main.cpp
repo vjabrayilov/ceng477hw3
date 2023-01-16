@@ -678,7 +678,6 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 
 void mainLoop(GLFWwindow* window)
 {
-    int cs = 4, rs = 6;
     vector<GLuint> progs;
     for(int i = 0; i < rs; i++) {
         for(int j = 0; j < cs; j++) {
