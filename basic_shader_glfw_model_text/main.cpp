@@ -577,16 +577,17 @@ void display()
 	static float angle = 0;
 
     glUseProgram(gProgram[0]);
-	//glLoadIdentity();
+	// glLoadIdentity();
 	//glTranslatef(-2, 0, -10);
 	//glRotatef(angle, 0, 1, 0);
     glm::mat4 R,S,T;
     float aspect_ratio = 1.*gHeight/gWidth;
-    for(int i = -rs/2; i <= rs/2; i++){
-        for(int j = -cs/2; j <= cs/2; j++){
-            T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio,i+aspect_ratio*2, -10.f));
+    for(int i = -rs/2; i < rs/2; i++){
+        for(int j = -cs/2; j < cs/2; j++){
+            T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio-1.*cs/gWidth+0.5,i+aspect_ratio+1.*rs/gHeight-0.5, -10.f));
             R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
-            S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/2,aspect_ratio/2, aspect_ratio/2));
+            S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/4,aspect_ratio/4, aspect_ratio/4));
+            //  S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio*sf,aspect_ratio*sf,aspect_ratio*sf));
             glm::mat4 modelMat = T * R * S;
             glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
             glm::mat4 perspMat = glm::perspective(glm::radians(45.0f), 1.f, 1.f, 100.0f);
