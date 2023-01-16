@@ -24,7 +24,11 @@ using namespace std;
 GLuint gProgram[3];
 GLint gIntensityLoc;
 float gIntensity = 1000;
-int gWidth = 640, gHeight = 480;
+// according to hw text
+int gWidth = 640, gHeight = 600;
+// grid size
+int rs, cs;
+string filename;
 
 struct Vertex
 {
@@ -494,7 +498,7 @@ void initFonts(int windowWidth, int windowHeight)
 void init() 
 {
 	//ParseObj("armadillo.obj");
-	ParseObj("bunny.obj");
+	ParseObj(filename);
 
     glEnable(GL_DEPTH_TEST);
     initShaders();
@@ -576,12 +580,11 @@ void display()
 	//glLoadIdentity();
 	//glTranslatef(-2, 0, -10);
 	//glRotatef(angle, 0, 1, 0);
-    int cs = 4, rs = 6;
     glm::mat4 R,S,T;
     float aspect_ratio = 1.*gHeight/gWidth;
-    for(int i = -rs/2; i < rs/2; i++){
-        for(int j = -cs/2; j < cs/2; j++){
-            T = glm::translate(glm::mat4(1.f), glm::vec3(-i-aspect_ratio*2, j + 1/aspect_ratio, -10.f));
+    for(int i = -rs/2; i <= rs/2; i++){
+        for(int j = -cs/2; j <= cs/2; j++){
+            T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio,i+aspect_ratio*2, -10.f));
             R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
             S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/2,aspect_ratio/2, aspect_ratio/2));
             glm::mat4 modelMat = T * R * S;
@@ -678,6 +681,13 @@ void mainLoop(GLFWwindow* window)
 
 int main(int argc, char** argv)   // Create Main Function For Bringing It All Together
 {
+    if(argc != 4){
+        std::cout<<"Correct usage: ./hw3 [row_size] [column_size] [.obj file]\n";
+        exit(1);
+    }
+    rs = atoi(argv[1]);
+    cs = atoi(argv[2]);
+    filename = std::string(argv[3]);
     GLFWwindow* window;
     if (!glfwInit())
     {
