@@ -21,7 +21,7 @@
 
 using namespace std;
 
-GLuint gProgram[3];
+GLuint gProgram[4];
 GLint gIntensityLoc;
 float gIntensity = 1000;
 // according to hw text
@@ -304,12 +304,16 @@ void initShaders()
     gProgram[0] = glCreateProgram();
     gProgram[1] = glCreateProgram();
     gProgram[2] = glCreateProgram();
+    gProgram[3] = glCreateProgram();
 
     createVS(gProgram[0], "vert0.glsl");
     createFS(gProgram[0], "frag0.glsl");
 
     createVS(gProgram[1], "vert1.glsl");
     createFS(gProgram[1], "frag1.glsl");
+
+    createVS(gProgram[3], "vert2.glsl");
+    createFS(gProgram[3], "frag2.glsl");
 
     createVS(gProgram[2], "vert_text.glsl");
     createFS(gProgram[2], "frag_text.glsl");
@@ -318,11 +322,14 @@ void initShaders()
     glBindAttribLocation(gProgram[0], 1, "inNormal");
     glBindAttribLocation(gProgram[1], 0, "inVertex");
     glBindAttribLocation(gProgram[1], 1, "inNormal");
+    glBindAttribLocation(gProgram[3], 0, "inVertex");
+    glBindAttribLocation(gProgram[3], 1, "inNormal");
     glBindAttribLocation(gProgram[2], 2, "vertex");
 
     glLinkProgram(gProgram[0]);
     glLinkProgram(gProgram[1]);
     glLinkProgram(gProgram[2]);
+    glLinkProgram(gProgram[3]);
     glUseProgram(gProgram[0]);
 
     gIntensityLoc = glGetUniformLocation(gProgram[0], "intensity");
@@ -567,7 +574,13 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
 }
 
 
-void display()
+int getRandomIndex() {
+    int num = (rand() % (2 - 0 + 1)) + 0;
+    if (num==2) {num=3;}
+    return num;
+}
+
+void display(vector<GLuint>& progs)
 {
     glClearColor(0, 0, 0, 1);
     glClearDepth(1.0f);
@@ -576,14 +589,21 @@ void display()
 
 	static float angle = 0;
 
-    glUseProgram(gProgram[0]);
 	// glLoadIdentity();
-	//glTranslatef(-2, 0, -10);
-	//glRotatef(angle, 0, 1, 0);
+
+    
+    //int idx = getRandomIndex();
+    //glUseProgram(gProgram[idx]);
+
     glm::mat4 R,S,T;
     float aspect_ratio = 1.*gHeight/gWidth;
+
+    int curr_idx = 0;
     for(int i = -rs/2; i < rs/2; i++){
         for(int j = -cs/2; j < cs/2; j++){
+            
+            glUseProgram(progs[curr_idx]);
+
             T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio-1.*cs/gWidth+0.5,i+aspect_ratio+1.*rs/gHeight-0.5, -10.f));
             R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
             S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/4,aspect_ratio/4, aspect_ratio/4));
@@ -592,30 +612,16 @@ void display()
             glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
             glm::mat4 perspMat = glm::perspective(glm::radians(45.0f), 1.f, 1.f, 100.0f);
 
-            glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
-            glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-            glUniformMatrix4fv(glGetUniformLocation(gProgram[0], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(perspMat));
-
+            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
+            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
+            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(perspMat));
+            
+            curr_idx += 1;
             drawModel();
         
         }
     }
-    
-    // glUseProgram(gProgram[1]);
-	// //glLoadIdentity();
-	// //glTranslatef(2, 0, -10);
-	// //glRotatef(-angle, 0, 1, 0);
 
-    // T = glm::translate(glm::mat4(1.f), glm::vec3(2.f, 0.f, -10.f));
-    // R = glm::rotate(glm::mat4(1.f), glm::radians(-angle), glm::vec3(0, 1, 0));
-    // modelMat = T * R;
-    // modelMatInv = glm::transpose(glm::inverse(modelMat));
-
-    // glUniformMatrix4fv(glGetUniformLocation(gProgram[1], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
-    // glUniformMatrix4fv(glGetUniformLocation(gProgram[1], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-    // glUniformMatrix4fv(glGetUniformLocation(gProgram[1], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(perspMat));
-
-    // drawModel();
     assert(glGetError() == GL_NO_ERROR);
 
     renderText("CENG 477 - 2022", 0, 0, 1, glm::vec3(0, 1, 1));
@@ -672,9 +678,18 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 
 void mainLoop(GLFWwindow* window)
 {
+    int cs = 4, rs = 6;
+    vector<GLuint> progs;
+    for(int i = 0; i < rs; i++) {
+        for(int j = 0; j < cs; j++) {
+            int idx = getRandomIndex();
+            GLuint prog = gProgram[idx];
+            progs.push_back(prog);
+        }
+    }
     while (!glfwWindowShouldClose(window))
     {
-        display();
+        display(progs);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
