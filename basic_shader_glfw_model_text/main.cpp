@@ -36,6 +36,7 @@ struct Obj{
     int color;
     double xpos;
     double ypos;
+    bool selected = false;
 };
 
 
@@ -572,8 +573,8 @@ void display(vector<GLuint>& progs)
     float aspect_ratio = 1.*gHeight/gWidth;
     double xprime, yprime;
     int curr_idx = 0;
-    for(int i = -rs/2; i < rs/2; i++){
-        for(int j = -cs/2; j < cs/2; j++){
+    for(int i = 0; i < rs; i++){
+        for(int j = 0; j < cs; j++){
             
             glUseProgram(progs[curr_idx]);
 
@@ -584,11 +585,22 @@ void display(vector<GLuint>& progs)
             //  S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio*sf,aspect_ratio*sf,aspect_ratio*sf));
             if(flag){
                 xprime = (double)(-j + 10)/20*640;
-                yprime = (double)(i + 10)/20*600;
-                grid[i+rs/2][j+cs/2].xpos = xprime;
-                grid[i+rs/2][j+cs/2].ypos = yprime;
+                yprime = (double)(-i + 10)/20*600;
+                grid[i][j].xpos = xprime;
+                grid[i][j].ypos = yprime;
                 std::cout<<"bunny_xpos: "<<-j <<" bunny_ypos: "<<i<<std::endl;
                 std::cout<<"xprime: "<<xprime<<" yprime: "<<yprime<<std::endl;
+            }
+            if(grid[i][j].selected){
+                // first element
+                static double sc = 0;
+                if(sc<100){
+                    S = glm::scale(glm::mat4(1.f), glm::vec3(sc/100,sc/100,sc/100));
+                    sc++;
+                }else{
+                    grid[i][j].selected = false;
+                    sc = 0;
+                }
             }
             glm::mat4 modelMat = T * R * S;
             glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
@@ -597,7 +609,7 @@ void display(vector<GLuint>& progs)
 
             glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
             glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
+            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "orthoMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
             
             curr_idx += 1;
             drawModel();
@@ -698,7 +710,8 @@ static void mouse_button_callback(GLFWwindow *window, int button, int action, in
                 double obj_xpos = grid[i][j].xpos;
                 double obj_ypos = grid[i][j].ypos;
                 std::cout<<obj_xpos<<" "<<obj_ypos<<std::endl;
-                if(obj_xpos - 20 < xpos && xpos < obj_xpos+20 && obj_ypos - 20 < ypos && ypos < obj_ypos+20){
+                if(obj_xpos - 15 < xpos && xpos < obj_xpos+15 && obj_ypos - 15 < ypos && ypos < obj_ypos+15){
+                    grid[i][j].selected = true;
                     std::cout<<"selected: "<<i<<" "<<j<<std::endl;
                 }
             }
