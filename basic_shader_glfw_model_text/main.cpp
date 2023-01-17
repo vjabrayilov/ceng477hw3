@@ -37,6 +37,7 @@ struct Obj{
     double xpos;
     double ypos;
     bool selected = false;
+    bool enabled = true;
 };
 
 
@@ -603,19 +604,22 @@ void display(vector<GLuint>& progs)
                 }else{
                     grid[i][j].selected = false;
                     sc = 0;
+                    grid[i][j].enabled = false;
                 }
             }
-            glm::mat4 modelMat = T * R * S;
-            glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
-            glm::mat4 perspMat = glm::perspective(glm::radians(45.0f), 1.f, 1.f, 100.0f);
-            glm::mat4 orthoMat = glm::ortho(-10.f, 10.f, -10.f, 10.f, -20.f, 20.f);
+            if(grid[i][j].enabled){
+                glm::mat4 modelMat = T * R * S;
+                glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
+                glm::mat4 perspMat = glm::perspective(glm::radians(45.0f), 1.f, 1.f, 100.0f);
+                glm::mat4 orthoMat = glm::ortho(-10.f, 10.f, -10.f, 10.f, -20.f, 20.f);
 
-            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
-            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "orthoMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
-            
+                glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
+                glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
+                glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "orthoMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
+                
+                drawModel();
+            }
             curr_idx += 1;
-            drawModel();
         
         }
     }
