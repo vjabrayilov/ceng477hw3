@@ -30,6 +30,18 @@ int gWidth = 640, gHeight = 600;
 int rs, cs;
 string filename;
 
+bool flag = true;
+
+struct Obj{
+    int color;
+    double xpos;
+    double ypos;
+};
+
+
+// grid
+std::vector<std::vector<Obj>> grid;
+
 struct Vertex
 {
     Vertex(GLfloat inX, GLfloat inY, GLfloat inZ) : x(inX), y(inY), z(inZ) { }
@@ -174,45 +186,6 @@ bool ParseObj(const string& fileName)
     {
         return false;
     }
-
-	/*
-	for (int i = 0; i < gVertices.size(); ++i)
-	{
-		Vector3 n;
-
-		for (int j = 0; j < gFaces.size(); ++j)
-		{
-			for (int k = 0; k < 3; ++k)
-			{
-				if (gFaces[j].vIndex[k] == i)
-				{
-					// face j contains vertex i
-					Vector3 a(gVertices[gFaces[j].vIndex[0]].x, 
-							  gVertices[gFaces[j].vIndex[0]].y,
-							  gVertices[gFaces[j].vIndex[0]].z);
-
-					Vector3 b(gVertices[gFaces[j].vIndex[1]].x, 
-							  gVertices[gFaces[j].vIndex[1]].y,
-							  gVertices[gFaces[j].vIndex[1]].z);
-
-					Vector3 c(gVertices[gFaces[j].vIndex[2]].x, 
-							  gVertices[gFaces[j].vIndex[2]].y,
-							  gVertices[gFaces[j].vIndex[2]].z);
-
-					Vector3 ab = b - a;
-					Vector3 ac = c - a;
-					Vector3 normalFromThisFace = (ab.cross(ac)).getNormalized();
-					n += normalFromThisFace;
-				}
-
-			}
-		}
-
-		n.normalize();
-
-		gNormals.push_back(Normal(n.x, n.y, n.z));
-	}
-	*/
 
 	assert(gVertices.size() == gNormals.size());
 
@@ -597,30 +570,42 @@ void display(vector<GLuint>& progs)
 
     glm::mat4 R,S,T;
     float aspect_ratio = 1.*gHeight/gWidth;
-
+    double xprime, yprime;
     int curr_idx = 0;
     for(int i = -rs/2; i < rs/2; i++){
         for(int j = -cs/2; j < cs/2; j++){
             
             glUseProgram(progs[curr_idx]);
 
-            T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio-1.*cs/gWidth+0.5,i+aspect_ratio+1.*rs/gHeight-0.5, -10.f));
+            // T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio-1.*cs/gWidth+0.5,i+aspect_ratio+1.*rs/gHeight-0.5, -10.f));
+            T = glm::translate(glm::mat4(1.f), glm::vec3(-j,i, -10.f));
             R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
-            S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/4,aspect_ratio/4, aspect_ratio/4));
+            S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/2,aspect_ratio/2, aspect_ratio/2));
             //  S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio*sf,aspect_ratio*sf,aspect_ratio*sf));
+            if(flag){
+                xprime = (double)(-j + 10)/20*640;
+                yprime = (double)(i + 10)/20*600;
+                grid[i+rs/2][j+cs/2].xpos = xprime;
+                grid[i+rs/2][j+cs/2].ypos = yprime;
+                std::cout<<"bunny_xpos: "<<-j <<" bunny_ypos: "<<i<<std::endl;
+                std::cout<<"xprime: "<<xprime<<" yprime: "<<yprime<<std::endl;
+            }
             glm::mat4 modelMat = T * R * S;
             glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
             glm::mat4 perspMat = glm::perspective(glm::radians(45.0f), 1.f, 1.f, 100.0f);
+            glm::mat4 orthoMat = glm::ortho(-10.f, 10.f, -10.f, 10.f, -20.f, 20.f);
 
             glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
             glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(perspMat));
+            glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
             
             curr_idx += 1;
             drawModel();
         
         }
     }
+
+    flag = false;
 
     assert(glGetError() == GL_NO_ERROR);
 
@@ -684,6 +669,7 @@ void mainLoop(GLFWwindow* window)
             int idx = getRandomIndex();
             GLuint prog = gProgram[idx];
             progs.push_back(prog);
+            grid[i][j].color = idx;
         }
     }
     while (!glfwWindowShouldClose(window))
@@ -705,6 +691,20 @@ static void mouse_button_callback(GLFWwindow *window, int button, int action, in
         glfwGetCursorPos(window, &xpos, &ypos);
 
         std::cout<<"cursor position at: xpos: "<<xpos<<" ypos: "<<ypos<<std::endl;
+        for (int i = 0; i < rs; i++)
+        {
+            for (int j = 0; j < cs; j++)
+            {
+                double obj_xpos = grid[i][j].xpos;
+                double obj_ypos = grid[i][j].ypos;
+                std::cout<<obj_xpos<<" "<<obj_ypos<<std::endl;
+                if(obj_xpos - 20 < xpos && xpos < obj_xpos+20 && obj_ypos - 20 < ypos && ypos < obj_ypos+20){
+                    std::cout<<"selected: "<<i<<" "<<j<<std::endl;
+                }
+            }
+            
+        }
+        
     }
 }
 
@@ -717,6 +717,16 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
     rs = atoi(argv[1]);
     cs = atoi(argv[2]);
     filename = std::string(argv[3]);
+    // init grid
+    grid.resize(rs);
+    for(size_t i = 0; i < rs; i++){
+        grid[i] = std::vector<Obj>(cs);
+        // for(size_t j = 0; j < cs; j++){
+        //     grid[i].push_back(Obj());
+        // }
+    }
+
+
     GLFWwindow* window;
     if (!glfwInit())
     {
