@@ -577,18 +577,21 @@ void display(vector<GLuint>& progs)
         for(int j = 0; j < cs; j++){
             
             glUseProgram(progs[curr_idx]);
-
+            double xt,yt;
             // T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio-1.*cs/gWidth+0.5,i+aspect_ratio+1.*rs/gHeight-0.5, -10.f));
-            T = glm::translate(glm::mat4(1.f), glm::vec3(-j,i, -10.f));
+            // T = glm::translate(glm::mat4(1.f), glm::vec3(-9+j,9-i, -10.f));
+            xt = (j)*(20./cs)-10+1.5;
+            yt = 10-i*(20./rs)-1.5;
+            T = glm::translate(glm::mat4(1.f), glm::vec3(xt,yt, -10.f));
             R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
             S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/2,aspect_ratio/2, aspect_ratio/2));
             //  S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio*sf,aspect_ratio*sf,aspect_ratio*sf));
             if(flag){
-                xprime = (double)(-j + 10)/20*640;
-                yprime = (double)(-i + 10)/20*600;
+                xprime = (double)(xt + 10)/20*640;
+                yprime = (double)(-yt + 10)/20*600;
                 grid[i][j].xpos = xprime;
                 grid[i][j].ypos = yprime;
-                std::cout<<"bunny_xpos: "<<-j <<" bunny_ypos: "<<i<<std::endl;
+                std::cout<<"bunny_xpos: "<<j <<" bunny_ypos: "<<i<<std::endl;
                 std::cout<<"xprime: "<<xprime<<" yprime: "<<yprime<<std::endl;
             }
             if(grid[i][j].selected){
