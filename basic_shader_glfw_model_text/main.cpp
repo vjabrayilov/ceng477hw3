@@ -32,6 +32,11 @@ string filename;
 
 bool flag = true;
 
+// moves && score
+int moves = 0;
+int score = 0;
+
+
 struct Obj{
     int color;
     double xpos;
@@ -604,6 +609,7 @@ void display(vector<GLuint>& progs)
                 }else{
                     grid[i][j].selected = false;
                     sc = 0;
+                    score++;
                     grid[i][j].enabled = false;
                 }
             }
@@ -628,8 +634,10 @@ void display(vector<GLuint>& progs)
 
     assert(glGetError() == GL_NO_ERROR);
 
-    renderText("CENG 477 - 2022", 0, 0, 1, glm::vec3(0, 1, 1));
-
+    std::string moves_str = "Moves: " + std::to_string(moves);
+    std::string scores_str = "Score: " + std::to_string(score);
+    renderText(moves_str, 0, 0, 1, glm::vec3(1,1,0));
+    renderText(scores_str,300,0,1, glm::vec3(1,1,0));
     assert(glGetError() == GL_NO_ERROR);
 
 	angle += 0.5;
@@ -719,6 +727,7 @@ static void mouse_button_callback(GLFWwindow *window, int button, int action, in
                 std::cout<<obj_xpos<<" "<<obj_ypos<<std::endl;
                 if(obj_xpos - 15 < xpos && xpos < obj_xpos+15 && obj_ypos - 15 < ypos && ypos < obj_ypos+15){
                     grid[i][j].selected = true;
+                    moves++;
                     std::cout<<"selected: "<<i<<" "<<j<<std::endl;
                 }
             }
