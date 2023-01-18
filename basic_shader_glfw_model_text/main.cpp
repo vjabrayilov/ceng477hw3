@@ -43,6 +43,10 @@ struct Obj{
     double ypos;
     bool selected = false;
     bool enabled = true;
+    bool matched = false;
+    int match_count = 0;
+    int match_start_index;
+    double msc = 0;
 };
 
 
@@ -102,6 +106,47 @@ struct Character {
 
 std::map<GLchar, Character> Characters;
 
+void colorMatch(){
+
+    for(int i = 0; i < rs; i++){
+        int current_count = 0;
+        for(int j = 0; j < cs-1; j++){
+            if(!grid[i][j].enabled) continue;
+            int current_color = grid[i][j].color;
+            int start_index;
+            std::cout<<"Current color for "<<i<<" "<<j<<" is "<<current_color<<std::endl;
+            if(grid[i][j+1].color == current_color){
+                current_count++;
+                std::cout<<i<<" row's "<<j<<" and "<<j+1<<" same color current_count: "<<current_count<<std::endl;
+                if(current_count == 2){
+                    std::cout<<"Started to select from "<<i<<" "<<j<<std::endl;
+                    grid[i][j].matched = true;
+                    grid[i][j-1].matched = true;
+                    grid[i][j+1].matched = true;
+
+                    grid[i][j].match_count = current_count;
+                    grid[i][j-1].match_count = current_count;
+                    grid[i][j+1].match_count = current_count;
+                    
+                    start_index = j-1;
+
+                    grid[i][j].match_start_index = start_index;
+                    grid[i][j-1].match_start_index = start_index;
+                    grid[i][j+1].match_start_index = start_index;
+
+                }
+                else if(current_count > 3){
+                    grid[i][j].matched = true;
+                    grid[i][j].match_start_index= start_index;
+                    grid[i][start_index].match_count++;
+                }
+            }else{
+                current_count = 0;
+        
+            }
+        }
+    }
+}
 
 bool ParseObj(const string& fileName)
 {
@@ -579,6 +624,7 @@ void display(vector<GLuint>& progs)
     float aspect_ratio = 1.*gHeight/gWidth;
     double xprime, yprime;
     int curr_idx = 0;
+    colorMatch();
     for(int i = 0; i < rs; i++){
         for(int j = 0; j < cs; j++){
             
@@ -600,6 +646,25 @@ void display(vector<GLuint>& progs)
                 std::cout<<"bunny_xpos: "<<j <<" bunny_ypos: "<<i<<std::endl;
                 std::cout<<"xprime: "<<xprime<<" yprime: "<<yprime<<std::endl;
             }
+
+            if(grid[i][j].matched && grid[i][j].enabled){
+                
+                int start_index = grid[i][j].match_start_index;
+                int count = grid[i][start_index].match_count;
+                std::cout<<"Bubbling: "<<i<<" "<<j<<" "<<start_index<<" "<<count<<" many bunnies\n";
+                if(grid[i][start_index].msc<100){
+                    S = glm::scale(glm::mat4(1.f), glm::vec3(grid[i][start_index].msc/100,grid[i][start_index].msc/100,grid[i][start_index].msc/100));
+                    grid[i][start_index].msc++;
+                }else{
+                    grid[i][start_index].msc = 0;
+                    for(int it = 0; it <= count;it++){
+                        grid[i][start_index+it].matched = false;
+                        grid[i][start_index+it].enabled = false;
+                        score++;
+                    }
+                }
+            }
+
             if(grid[i][j].selected){
                 // first element
                 static double sc = 0;
