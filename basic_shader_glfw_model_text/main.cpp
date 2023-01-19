@@ -605,7 +605,9 @@ int getRandomIndex() {
     return num;
 }
 
-void display(vector<GLuint>& progs)
+
+
+void display(vector<vector<GLuint>>& progs)
 {
     glClearColor(0, 0, 0, 1);
     glClearDepth(1.0f);
@@ -614,30 +616,51 @@ void display(vector<GLuint>& progs)
 
 	static float angle = 0;
 
-	// glLoadIdentity();
-
-    
-    //int idx = getRandomIndex();
-    //glUseProgram(gProgram[idx]);
-
     glm::mat4 R,S,T;
     float aspect_ratio = 1.*gHeight/gWidth;
     double xprime, yprime;
     int curr_idx = 0;
     colorMatch();
+
+    for(int m = 0; m < grid.size(); m++) {
+                for(int n = 0; n < grid[0].size(); n++) {
+                    if(!grid[m][n].enabled) {
+                        struct Obj tmp;
+                        GLuint tmp_prog;
+                        for(int k = m; k > 0; k--) {
+                            tmp = grid[k-1][n];
+                            
+                            grid[k-1][n] = grid[k][n];
+                            
+                            grid[k][n] = tmp;
+
+                            tmp_prog = progs[k-1][n];
+                            progs[k-1][n] = progs[k][n];
+                            progs[k][n] = tmp_prog;
+                        }
+
+                        
+                        int idx = getRandomIndex();
+                        GLuint prog = gProgram[idx];
+                        progs[0][n] = prog;
+                        grid[0][n].color = idx;
+                        grid[0][n].enabled = true;
+                    }
+                }
+            }
+
     for(int i = 0; i < rs; i++){
         for(int j = 0; j < cs; j++){
             
-            glUseProgram(progs[curr_idx]);
+            glUseProgram(progs[i][j]);
             double xt,yt;
-            // T = glm::translate(glm::mat4(1.f), glm::vec3(-j - 1/aspect_ratio-1.*cs/gWidth+0.5,i+aspect_ratio+1.*rs/gHeight-0.5, -10.f));
-            // T = glm::translate(glm::mat4(1.f), glm::vec3(-9+j,9-i, -10.f));
+
             xt = (j)*(20./cs)-10+1.5;
             yt = 10-i*(20./rs)-1.5;
             T = glm::translate(glm::mat4(1.f), glm::vec3(xt,yt, -10.f));
             R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
             S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/2,aspect_ratio/2, aspect_ratio/2));
-            //  S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio*sf,aspect_ratio*sf,aspect_ratio*sf));
+
             if(flag){
                 xprime = (double)(xt + 10)/20*640;
                 yprime = (double)(-yt + 10)/20*600;
@@ -652,8 +675,8 @@ void display(vector<GLuint>& progs)
                 int start_index = grid[i][j].match_start_index;
                 int count = grid[i][start_index].match_count;
                 std::cout<<"Bubbling: "<<i<<" "<<j<<" "<<start_index<<" "<<count<<" many bunnies\n";
-                if(grid[i][start_index].msc<100){
-                    S = glm::scale(glm::mat4(1.f), glm::vec3(grid[i][start_index].msc/100,grid[i][start_index].msc/100,grid[i][start_index].msc/100));
+                if(grid[i][start_index].msc<200){
+                    S = glm::scale(glm::mat4(1.f), glm::vec3(grid[i][start_index].msc/200,grid[i][start_index].msc/200,grid[i][start_index].msc/200));
                     grid[i][start_index].msc++;
                 }else{
                     grid[i][start_index].msc = 0;
@@ -684,14 +707,13 @@ void display(vector<GLuint>& progs)
                 glm::mat4 perspMat = glm::perspective(glm::radians(45.0f), 1.f, 1.f, 100.0f);
                 glm::mat4 orthoMat = glm::ortho(-10.f, 10.f, -10.f, 10.f, -20.f, 20.f);
 
-                glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
-                glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-                glUniformMatrix4fv(glGetUniformLocation(progs[curr_idx], "orthoMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
+                glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
+                glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
+                glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "orthoMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
                 
                 drawModel();
             }
             curr_idx += 1;
-        
         }
     }
 
@@ -755,12 +777,20 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
 
 void mainLoop(GLFWwindow* window)
 {
-    vector<GLuint> progs;
+    vector<vector<GLuint>> progs;
+    for(int i = 0; i < rs; i++) {
+        vector<GLuint> empty_vec;
+        progs.push_back(empty_vec);
+        for(int j = 0; j < cs; j++) {
+            GLuint dum = 0;
+            progs[i].push_back(dum);
+        }
+    }
     for(int i = 0; i < rs; i++) {
         for(int j = 0; j < cs; j++) {
             int idx = getRandomIndex();
             GLuint prog = gProgram[idx];
-            progs.push_back(prog);
+            progs[i][j] = prog;
             grid[i][j].color = idx;
         }
     }
