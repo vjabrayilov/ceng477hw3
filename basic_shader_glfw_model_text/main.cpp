@@ -747,7 +747,7 @@ void display()
 
             glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
             glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-            glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(perspMat));
+            glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "orthoMat"), 1, GL_FALSE, glm::value_ptr(perspMat));
 
             drawModel();
 
