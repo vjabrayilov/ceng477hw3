@@ -857,6 +857,7 @@ static void mouse_button_callback(GLFWwindow *window, int button, int action, in
         glfwGetCursorPos(window, &xpos, &ypos);
         grid[ypos / (gHeight * 0.95f) * rs][xpos / gWidth * cs].matched = true;
         moves++;
+        std::cout << "Mouse click xpos: " << xpos << " ypos: " << ypos << std::endl;
     }
 }
 
