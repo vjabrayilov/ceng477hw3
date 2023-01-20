@@ -654,7 +654,7 @@ void display()
 
     // static float angle = 0;
     glm::mat4 R, S, T;
-    // colorMatch();
+    colorMatch();
 
     int explosion_count = get_explosion_count();
     if (explosion_count > 0)
