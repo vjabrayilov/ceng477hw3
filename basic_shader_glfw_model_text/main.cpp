@@ -36,22 +36,24 @@ bool flag = true;
 int moves = 0;
 int score = 0;
 
+int scale = 0;
+bool animation = false;
+bool slide = false;
+bool explosion_check = false;
+
+float angle = 0.0;
 
 struct Obj{
     int color;
-    double xpos;
-    double ypos;
-    bool selected = false;
-    bool enabled = true;
     bool matched = false;
-    int match_count = 0;
-    int match_start_index;
-    double msc = 0;
+    double distance = 0;
 };
 
 
 // grid
 std::vector<std::vector<Obj>> grid;
+//progs
+std::vector<std::vector<GLuint>> progs;
 
 struct Vertex
 {
@@ -107,44 +109,53 @@ struct Character {
 std::map<GLchar, Character> Characters;
 
 void colorMatch(){
-
+    if(explosion_check)
+        return;
+    int count = 0;
+    int current_color;
     for(int i = 0; i < rs; i++){
-        int current_count = 0;
-        for(int j = 0; j < cs-1; j++){
-            if(!grid[i][j].enabled) continue;
-            int current_color = grid[i][j].color;
-            int start_index;
-            std::cout<<"Current color for "<<i<<" "<<j<<" is "<<current_color<<std::endl;
-            if(grid[i][j+1].color == current_color){
-                current_count++;
-                std::cout<<i<<" row's "<<j<<" and "<<j+1<<" same color current_count: "<<current_count<<std::endl;
-                if(current_count == 2){
-                    std::cout<<"Started to select from "<<i<<" "<<j<<std::endl;
-                    grid[i][j].matched = true;
-                    grid[i][j-1].matched = true;
-                    grid[i][j+1].matched = true;
+        current_color = grid[i][0].color;
+        // you can add int count = 1 here; equivalen
+        count++;
 
-                    grid[i][j].match_count = current_count;
-                    grid[i][j-1].match_count = current_count;
-                    grid[i][j+1].match_count = current_count;
-                    
-                    start_index = j-1;
+        for(int j = 1; j < cs; j++){
+            // current_color = grid[i][j].color;
+            if(grid[i][j].color == current_color){
+                count++;
 
-                    grid[i][j].match_start_index = start_index;
-                    grid[i][j-1].match_start_index = start_index;
-                    grid[i][j+1].match_start_index = start_index;
-
+                if(count >= 3){
+                    for(int k = j-count+1; k<=j; k++){
+                        grid[i][k].matched = true;
+                    }
                 }
-                else if(current_count > 3){
-                    grid[i][j].matched = true;
-                    grid[i][j].match_start_index= start_index;
-                    grid[i][start_index].match_count++;
-                }
-            }else{
-                current_count = 0;
-        
+            }
+            else{
+                count = 1;
+                current_color = grid[i][j].color;
             }
         }
+        count = 0;
+    }
+
+    for(int j = 0; j < cs; j++){
+        int current_color = grid[0][j].color;
+        // int count = 1;
+        count++;
+        for(int i = 1; i < rs; i++){
+        
+            if(current_color == grid[i][j].color){
+                count++;
+                if(count >= 3){
+                    for(int k = i - count + 1; k <= i; k++){
+                        grid[k][j].matched = true;
+                    }
+                }else{
+                    count = 1;
+                    current_color = grid[i][j].color;
+                }
+            }
+        }
+        count = 0;
     }
 }
 
@@ -605,121 +616,119 @@ int getRandomIndex() {
     return num;
 }
 
+int get_explosion_count(){
+    int res = 0;
+    for(int i = 0; i < rs; i++)
+        for(int j = 0; j < cs; j++){
+            if(grid[i][j].matched)
+                res++;
+        }
+    return res;
+}
 
-
-void display(vector<vector<GLuint>>& progs)
+void display()
 {
     glClearColor(0, 0, 0, 1);
     glClearDepth(1.0f);
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	static float angle = 0;
-
+	// static float angle = 0;
     glm::mat4 R,S,T;
     float aspect_ratio = 1.*gHeight/gWidth;
     double xprime, yprime;
     int curr_idx = 0;
     colorMatch();
 
-    for(int m = 0; m < grid.size(); m++) {
-                for(int n = 0; n < grid[0].size(); n++) {
-                    if(!grid[m][n].enabled) {
-                        struct Obj tmp;
-                        GLuint tmp_prog;
-                        for(int k = m; k > 0; k--) {
-                            tmp = grid[k-1][n];
-                            
-                            grid[k-1][n] = grid[k][n];
-                            
-                            grid[k][n] = tmp;
+    int explosion_count = get_explosion_count();
+    if(explosion_count > 0)
+        animation = true;
+    if(scale == 50){
+        if(explosion_count >= 3){
+            score += explosion_count;
+        }
 
-                            tmp_prog = progs[k-1][n];
-                            progs[k-1][n] = progs[k][n];
-                            progs[k][n] = tmp_prog;
-                        }
+        scale = 0;
 
-                        
-                        int idx = getRandomIndex();
-                        GLuint prog = gProgram[idx];
-                        progs[0][n] = prog;
-                        grid[0][n].color = idx;
-                        grid[0][n].enabled = true;
+        for(int j = 0; j < cs; j++){
+            bool shift = false;
+            int shift_count = 1;
+
+            for(int i = rs -1; i >= 0; i--){
+                if(!grid[i][j].matched && shift == false){
+                    grid[i][j].distance = 0;
+                    continue;
+                }
+
+                shift = true;
+
+                while( (i - shift_count) >= 0){
+                    if(!grid[i-shift_count][j].matched){
+                        grid[i][j].color = grid[i-shift_count][j].color;
+                        // be sure about following
+                        progs[i][j] = progs[i-shift_count][j];
+                        break;
                     }
+                    shift_count++;
+                }
+
+                grid[i][j].distance = (shift_count * 20.0f)/(0.05f*rs);
+
+                if((i - shift_count) < 0){
+                    int idx = getRandomIndex();
+                    GLuint prog = gProgram[idx];
+                    progs[i][j] = prog;
+                    grid[i][j].color = idx;
                 }
             }
+        }
+        for(int i = 0; i < rs; i++)
+            for(int j = 0; j < cs; j++)
+                grid[i][j].matched = false;
+        slide = true;
+    }
 
+    if(explosion_count > 0)
+        scale += 1;
+    int zeros_count = 0;
     for(int i = 0; i < rs; i++){
         for(int j = 0; j < cs; j++){
-            
             glUseProgram(progs[i][j]);
-            double xt,yt;
-
-            xt = (j)*(20./cs)-10+1.5;
-            yt = 10-i*(20./rs)-1.5;
-            T = glm::translate(glm::mat4(1.f), glm::vec3(xt,yt, -10.f));
-            R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
-            S = glm::scale(glm::mat4(1.f), glm::vec3(aspect_ratio/2,aspect_ratio/2, aspect_ratio/2));
-
-            if(flag){
-                xprime = (double)(xt + 10)/20*640;
-                yprime = (double)(-yt + 10)/20*600;
-                grid[i][j].xpos = xprime;
-                grid[i][j].ypos = yprime;
-                std::cout<<"bunny_xpos: "<<j <<" bunny_ypos: "<<i<<std::endl;
-                std::cout<<"xprime: "<<xprime<<" yprime: "<<yprime<<std::endl;
+            glm::mat4 S = glm::scale(glm::mat4(1.f), glm::vec3(3.5f / max(cs, rs) ) );
+            if(grid[i][j].matched == true){
+                 glm::mat4 extraScale = glm::scale(glm::mat4(1.f), glm::vec3(1.f + 0.01f * scale));
+                S = extraScale * S;
             }
 
-            if(grid[i][j].matched && grid[i][j].enabled){
-                
-                int start_index = grid[i][j].match_start_index;
-                int count = grid[i][start_index].match_count;
-                std::cout<<"Bubbling: "<<i<<" "<<j<<" "<<start_index<<" "<<count<<" many bunnies\n";
-                if(grid[i][start_index].msc<200){
-                    S = glm::scale(glm::mat4(1.f), glm::vec3(grid[i][start_index].msc/200,grid[i][start_index].msc/200,grid[i][start_index].msc/200));
-                    grid[i][start_index].msc++;
-                }else{
-                    grid[i][start_index].msc = 0;
-                    for(int it = 0; it <= count;it++){
-                        grid[i][start_index+it].matched = false;
-                        grid[i][start_index+it].enabled = false;
-                        score++;
-                    }
-                }
+            float shifting_factor = 0;
+
+            if(grid[i][j].distance > 0){
+                shifting_factor = 0.05*grid[i][j].distance;
+                grid[i][j].distance--;
+            }else{
+                zeros_count++;
             }
 
-            if(grid[i][j].selected){
-                // first element
-                static double sc = 0;
-                if(sc<100){
-                    S = glm::scale(glm::mat4(1.f), glm::vec3(sc/100,sc/100,sc/100));
-                    sc++;
-                }else{
-                    grid[i][j].selected = false;
-                    sc = 0;
-                    score++;
-                    grid[i][j].enabled = false;
-                }
-            }
-            if(grid[i][j].enabled){
-                glm::mat4 modelMat = T * R * S;
-                glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
-                glm::mat4 perspMat = glm::perspective(glm::radians(45.0f), 1.f, 1.f, 100.0f);
-                glm::mat4 orthoMat = glm::ortho(-10.f, 10.f, -10.f, 10.f, -20.f, 20.f);
+            glm::mat4 T = glm::translate(glm::mat4(1.f), glm::vec3(-10.f + (20.0f/cs)*(j + 0.5f), 10.f - (19.0f/rs)*(i + 0.5f) + shifting_factor, -10.f));
+            glm::mat4 R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
+            glm::mat4 modelMat =  T * R * S;
+            glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
+            glm::mat4 perspMat = glm::ortho(-10.f, 10.f, -10.f, 10.f, -20.f, 20.f);
 
-                glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
-                glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
-                glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "orthoMat"), 1, GL_FALSE, glm::value_ptr(orthoMat));
-                
-                drawModel();
-            }
-            curr_idx += 1;
+            glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMat"), 1, GL_FALSE, glm::value_ptr(modelMat));
+            glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "modelingMatInvTr"), 1, GL_FALSE, glm::value_ptr(modelMatInv));
+            glUniformMatrix4fv(glGetUniformLocation(progs[i][j], "perspectiveMat"), 1, GL_FALSE, glm::value_ptr(perspMat));
+
+            drawModel();
+
+            assert(glGetError() == GL_NO_ERROR);
         }
     }
 
-    flag = false;
-
-    assert(glGetError() == GL_NO_ERROR);
+    if(zeros_count == rs*cs && slide ){
+        explosion_check = false;
+        slide = false;
+    }
 
     std::string moves_str = "Moves: " + std::to_string(moves);
     std::string scores_str = "Score: " + std::to_string(score);
@@ -728,6 +737,7 @@ void display(vector<vector<GLuint>>& progs)
     assert(glGetError() == GL_NO_ERROR);
 
 	angle += 0.5;
+  
 }
 
 void reshape(GLFWwindow* window, int w, int h)
@@ -747,37 +757,35 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
-    else if (key == GLFW_KEY_F && action == GLFW_PRESS)
+    else if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
-        cout << "F pressed" << endl;
-        glUseProgram(gProgram[1]);
+
+        // reset distance
+
+        // reset explosion info
+        for(int i = 0; i < rs; i++)
+            for(int j = 0; j < cs; j++){
+                grid[i][j].matched = false;
+                grid[i][j].distance = 0;
+                int idx = getRandomIndex();
+                GLuint prog = gProgram[idx];
+                progs[i][j] = prog;
+                grid[i][j].color = idx;
+            }        
+        explosion_check = false;
+        slide = false;
+        animation = false;
+        scale = 0;
+        angle = 0;
+        moves = 0;
+        score = 0;
     }
-    else if (key == GLFW_KEY_V && action == GLFW_PRESS)
-    {
-        cout << "V pressed" << endl;
-        glUseProgram(gProgram[0]);
-    }
-    else if (key == GLFW_KEY_D && action == GLFW_PRESS)
-    {
-        cout << "D pressed" << endl;
-        gIntensity /= 1.5;
-        cout << "gIntensity = " << gIntensity << endl;
-        glUseProgram(gProgram[0]);
-        glUniform1f(gIntensityLoc, gIntensity);
-    }
-    else if (key == GLFW_KEY_B && action == GLFW_PRESS)
-    {
-        cout << "B pressed" << endl;
-        gIntensity *= 1.5;
-        cout << "gIntensity = " << gIntensity << endl;
-        glUseProgram(gProgram[0]);
-        glUniform1f(gIntensityLoc, gIntensity);
-    }
+    
 }
 
 void mainLoop(GLFWwindow* window)
 {
-    vector<vector<GLuint>> progs;
+    
     for(int i = 0; i < rs; i++) {
         vector<GLuint> empty_vec;
         progs.push_back(empty_vec);
@@ -796,7 +804,7 @@ void mainLoop(GLFWwindow* window)
     }
     while (!glfwWindowShouldClose(window))
     {
-        display(progs);
+        display();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -807,28 +815,11 @@ static void cursor_position_callback(GLFWwindow *window, double xpos, double ypo
 }
 
 static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods){
-    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS){
+    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !slide && explosion_check && !animation ){
         double xpos, ypos;
-
         glfwGetCursorPos(window, &xpos, &ypos);
-
-        std::cout<<"cursor position at: xpos: "<<xpos<<" ypos: "<<ypos<<std::endl;
-        for (int i = 0; i < rs; i++)
-        {
-            for (int j = 0; j < cs; j++)
-            {
-                double obj_xpos = grid[i][j].xpos;
-                double obj_ypos = grid[i][j].ypos;
-                std::cout<<obj_xpos<<" "<<obj_ypos<<std::endl;
-                if(obj_xpos - 15 < xpos && xpos < obj_xpos+15 && obj_ypos - 15 < ypos && ypos < obj_ypos+15){
-                    grid[i][j].selected = true;
-                    moves++;
-                    std::cout<<"selected: "<<i<<" "<<j<<std::endl;
-                }
-            }
-            
-        }
-        
+        grid[ypos/(gHeight*0.95f)*rs][xpos/gWidth*cs].matched = true;
+        moves++;
     }
 }
 
@@ -845,9 +836,6 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
     grid.resize(rs);
     for(size_t i = 0; i < rs; i++){
         grid[i] = std::vector<Obj>(cs);
-        // for(size_t j = 0; j < cs; j++){
-        //     grid[i].push_back(Obj());
-        // }
     }
 
 
