@@ -112,19 +112,23 @@ std::map<GLchar, Character> Characters;
 
 void colorMatch()
 {
+
     if (explosion_check)
+    {
         return;
-    int count = 0;
+    }
+
     int current_color;
+    int count = 0;
+
     for (int i = 0; i < rs; i++)
     {
         current_color = grid[i][0].color;
-        // you can add int count = 1 here; equivalen
         count++;
 
         for (int j = 1; j < cs; j++)
         {
-            // current_color = grid[i][j].color;
+
             if (grid[i][j].color == current_color)
             {
                 count++;
@@ -148,15 +152,16 @@ void colorMatch()
 
     for (int j = 0; j < cs; j++)
     {
-        int current_color = grid[0][j].color;
-        // int count = 1;
+        current_color = grid[0][j].color;
         count++;
+
         for (int i = 1; i < rs; i++)
         {
 
-            if (current_color == grid[i][j].color)
+            if (grid[i][j].color == current_color)
             {
                 count++;
+
                 if (count >= 3)
                 {
                     for (int k = i - count + 1; k <= i; k++)
@@ -164,17 +169,18 @@ void colorMatch()
                         grid[k][j].matched = true;
                     }
                 }
-                else
-                {
-                    count = 1;
-                    current_color = grid[i][j].color;
-                }
+            }
+            else
+            {
+                count = 1;
+                current_color = grid[i][j].color;
             }
         }
         count = 0;
     }
-}
 
+    explosion_check = true;
+}
 bool ParseObj(const string &fileName)
 {
     fstream myfile;
@@ -657,8 +663,12 @@ void display()
     colorMatch();
 
     int explosion_count = get_explosion_count();
+    // std::cout << "explosion_count: " << explosion_count << std::endl;
     if (explosion_count > 0)
         animation = true;
+    else
+        animation = false;
+    // std::cout << "animation: " << animation << std::endl;
     if (scale == 50)
     {
         if (explosion_count >= 3)
@@ -757,6 +767,7 @@ void display()
 
     if (zeros_count == rs * cs && slide)
     {
+        std::cout << "num zero check\n";
         explosion_check = false;
         slide = false;
     }
@@ -851,6 +862,7 @@ static void cursor_position_callback(GLFWwindow *window, double xpos, double ypo
 
 static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
+    std::cout << "slide: " << slide << " explosion check: " << explosion_check << " animation: " << animation << std::endl;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !slide && explosion_check && !animation)
     {
         double xpos, ypos;
@@ -916,10 +928,10 @@ int main(int argc, char **argv) // Create Main Function For Bringing It All Toge
     init();
 
     glfwSetKeyCallback(window, keyboard);
-    glfwSetWindowSizeCallback(window, reshape);
 
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
+    glfwSetWindowSizeCallback(window, reshape);
     reshape(window, gWidth, gHeight); // need to call this once ourselves
     mainLoop(window);                 // this does not return unless the window is closed
 
