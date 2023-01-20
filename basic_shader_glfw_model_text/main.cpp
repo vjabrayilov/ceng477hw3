@@ -8,8 +8,8 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <GL/glew.h>   // The GL Header File
-#include <GL/gl.h>   // The GL Header File
+#include <GL/glew.h>    // The GL Header File
+#include <GL/gl.h>      // The GL Header File
 #include <GLFW/glfw3.h> // The GLFW header
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -17,7 +17,7 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-#define BUFFER_OFFSET(i) ((char*)NULL + (i))
+#define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
 using namespace std;
 
@@ -43,49 +43,50 @@ bool explosion_check = false;
 
 float angle = 0.0;
 
-struct Obj{
+struct Obj
+{
     int color;
     bool matched = false;
     double distance = 0;
 };
 
-
 // grid
 std::vector<std::vector<Obj>> grid;
-//progs
+// progs
 std::vector<std::vector<GLuint>> progs;
 
 struct Vertex
 {
-    Vertex(GLfloat inX, GLfloat inY, GLfloat inZ) : x(inX), y(inY), z(inZ) { }
+    Vertex(GLfloat inX, GLfloat inY, GLfloat inZ) : x(inX), y(inY), z(inZ) {}
     GLfloat x, y, z;
 };
 
 struct Texture
 {
-    Texture(GLfloat inU, GLfloat inV) : u(inU), v(inV) { }
+    Texture(GLfloat inU, GLfloat inV) : u(inU), v(inV) {}
     GLfloat u, v;
 };
 
 struct Normal
 {
-    Normal(GLfloat inX, GLfloat inY, GLfloat inZ) : x(inX), y(inY), z(inZ) { }
+    Normal(GLfloat inX, GLfloat inY, GLfloat inZ) : x(inX), y(inY), z(inZ) {}
     GLfloat x, y, z;
 };
 
 struct Face
 {
-	Face(int v[], int t[], int n[]) {
-		vIndex[0] = v[0];
-		vIndex[1] = v[1];
-		vIndex[2] = v[2];
-		tIndex[0] = t[0];
-		tIndex[1] = t[1];
-		tIndex[2] = t[2];
-		nIndex[0] = n[0];
-		nIndex[1] = n[1];
-		nIndex[2] = n[2];
-	}
+    Face(int v[], int t[], int n[])
+    {
+        vIndex[0] = v[0];
+        vIndex[1] = v[1];
+        vIndex[2] = v[2];
+        tIndex[0] = t[0];
+        tIndex[1] = t[1];
+        tIndex[2] = t[2];
+        nIndex[0] = n[0];
+        nIndex[1] = n[1];
+        nIndex[2] = n[2];
+    }
     GLuint vIndex[3], tIndex[3], nIndex[3];
 };
 
@@ -99,37 +100,45 @@ GLint gInVertexLoc, gInNormalLoc;
 int gVertexDataSizeInBytes, gNormalDataSizeInBytes;
 
 /// Holds all state information relevant to a character as loaded using FreeType
-struct Character {
+struct Character
+{
     GLuint TextureID;   // ID handle of the glyph texture
     glm::ivec2 Size;    // Size of glyph
-    glm::ivec2 Bearing;  // Offset from baseline to left/top of glyph
-    GLuint Advance;    // Horizontal offset to advance to next glyph
+    glm::ivec2 Bearing; // Offset from baseline to left/top of glyph
+    GLuint Advance;     // Horizontal offset to advance to next glyph
 };
 
 std::map<GLchar, Character> Characters;
 
-void colorMatch(){
-    if(explosion_check)
+void colorMatch()
+{
+    if (explosion_check)
         return;
     int count = 0;
     int current_color;
-    for(int i = 0; i < rs; i++){
+    for (int i = 0; i < rs; i++)
+    {
         current_color = grid[i][0].color;
         // you can add int count = 1 here; equivalen
         count++;
 
-        for(int j = 1; j < cs; j++){
+        for (int j = 1; j < cs; j++)
+        {
             // current_color = grid[i][j].color;
-            if(grid[i][j].color == current_color){
+            if (grid[i][j].color == current_color)
+            {
                 count++;
 
-                if(count >= 3){
-                    for(int k = j-count+1; k<=j; k++){
+                if (count >= 3)
+                {
+                    for (int k = j - count + 1; k <= j; k++)
+                    {
                         grid[i][k].matched = true;
                     }
                 }
             }
-            else{
+            else
+            {
                 count = 1;
                 current_color = grid[i][j].color;
             }
@@ -137,19 +146,26 @@ void colorMatch(){
         count = 0;
     }
 
-    for(int j = 0; j < cs; j++){
+    for (int j = 0; j < cs; j++)
+    {
         int current_color = grid[0][j].color;
         // int count = 1;
         count++;
-        for(int i = 1; i < rs; i++){
-        
-            if(current_color == grid[i][j].color){
+        for (int i = 1; i < rs; i++)
+        {
+
+            if (current_color == grid[i][j].color)
+            {
                 count++;
-                if(count >= 3){
-                    for(int k = i - count + 1; k <= i; k++){
+                if (count >= 3)
+                {
+                    for (int k = i - count + 1; k <= i; k++)
+                    {
                         grid[k][j].matched = true;
                     }
-                }else{
+                }
+                else
+                {
                     count = 1;
                     current_color = grid[i][j].color;
                 }
@@ -159,11 +175,11 @@ void colorMatch(){
     }
 }
 
-bool ParseObj(const string& fileName)
+bool ParseObj(const string &fileName)
 {
     fstream myfile;
 
-    // Open the input 
+    // Open the input
     myfile.open(fileName.c_str(), std::ios::in);
 
     if (myfile.is_open())
@@ -207,26 +223,29 @@ bool ParseObj(const string& fileName)
                 else if (curLine[0] == 'f') // face
                 {
                     str >> tmp; // consume "f"
-					char c;
-					int vIndex[3],  nIndex[3], tIndex[3];
-					str >> vIndex[0]; str >> c >> c; // consume "//"
-					str >> nIndex[0]; 
-					str >> vIndex[1]; str >> c >> c; // consume "//"
-					str >> nIndex[1]; 
-					str >> vIndex[2]; str >> c >> c; // consume "//"
-					str >> nIndex[2]; 
+                    char c;
+                    int vIndex[3], nIndex[3], tIndex[3];
+                    str >> vIndex[0];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[0];
+                    str >> vIndex[1];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[1];
+                    str >> vIndex[2];
+                    str >> c >> c; // consume "//"
+                    str >> nIndex[2];
 
-					assert(vIndex[0] == nIndex[0] &&
-						   vIndex[1] == nIndex[1] &&
-						   vIndex[2] == nIndex[2]); // a limitation for now
+                    assert(vIndex[0] == nIndex[0] &&
+                           vIndex[1] == nIndex[1] &&
+                           vIndex[2] == nIndex[2]); // a limitation for now
 
-					// make indices start from 0
-					for (int c = 0; c < 3; ++c)
-					{
-						vIndex[c] -= 1;
-						nIndex[c] -= 1;
-						tIndex[c] -= 1;
-					}
+                    // make indices start from 0
+                    for (int c = 0; c < 3; ++c)
+                    {
+                        vIndex[c] -= 1;
+                        nIndex[c] -= 1;
+                        tIndex[c] -= 1;
+                    }
 
                     gFaces.push_back(Face(vIndex, tIndex, nIndex));
                 }
@@ -236,10 +255,10 @@ bool ParseObj(const string& fileName)
                 }
             }
 
-            //data += curLine;
+            // data += curLine;
             if (!myfile.eof())
             {
-                //data += "\n";
+                // data += "\n";
             }
         }
 
@@ -250,18 +269,18 @@ bool ParseObj(const string& fileName)
         return false;
     }
 
-	assert(gVertices.size() == gNormals.size());
+    assert(gVertices.size() == gNormals.size());
 
     return true;
 }
 
 bool ReadDataFromFile(
-    const string& fileName, ///< [in]  Name of the shader file
-    string&       data)     ///< [out] The contents of the file
+    const string &fileName, ///< [in]  Name of the shader file
+    string &data)           ///< [out] The contents of the file
 {
     fstream myfile;
 
-    // Open the input 
+    // Open the input
     myfile.open(fileName.c_str(), std::ios::in);
 
     if (myfile.is_open())
@@ -287,7 +306,7 @@ bool ReadDataFromFile(
     return true;
 }
 
-void createVS(GLuint& program, const string& filename)
+void createVS(GLuint &program, const string &filename)
 {
     string shaderSource;
 
@@ -298,7 +317,7 @@ void createVS(GLuint& program, const string& filename)
     }
 
     GLint length = shaderSource.length();
-    const GLchar* shader = (const GLchar*) shaderSource.c_str();
+    const GLchar *shader = (const GLchar *)shaderSource.c_str();
 
     GLuint vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &shader, &length);
@@ -311,7 +330,7 @@ void createVS(GLuint& program, const string& filename)
     glAttachShader(program, vs);
 }
 
-void createFS(GLuint& program, const string& filename)
+void createFS(GLuint &program, const string &filename)
 {
     string shaderSource;
 
@@ -322,7 +341,7 @@ void createFS(GLuint& program, const string& filename)
     }
 
     GLint length = shaderSource.length();
-    const GLchar* shader = (const GLchar*) shaderSource.c_str();
+    const GLchar *shader = (const GLchar *)shaderSource.c_str();
 
     GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fs, 1, &shader, &length);
@@ -390,9 +409,9 @@ void initVBO()
     gVertexDataSizeInBytes = gVertices.size() * 3 * sizeof(GLfloat);
     gNormalDataSizeInBytes = gNormals.size() * 3 * sizeof(GLfloat);
     int indexDataSizeInBytes = gFaces.size() * 3 * sizeof(GLuint);
-    GLfloat* vertexData = new GLfloat [gVertices.size() * 3];
-    GLfloat* normalData = new GLfloat [gNormals.size() * 3];
-    GLuint* indexData = new GLuint [gFaces.size() * 3];
+    GLfloat *vertexData = new GLfloat[gVertices.size() * 3];
+    GLfloat *normalData = new GLfloat[gNormals.size() * 3];
+    GLuint *indexData = new GLuint[gFaces.size() * 3];
 
     float minX = 1e6, maxX = -1e6;
     float minY = 1e6, maxY = -1e6;
@@ -400,9 +419,9 @@ void initVBO()
 
     for (int i = 0; i < gVertices.size(); ++i)
     {
-        vertexData[3*i] = gVertices[i].x;
-        vertexData[3*i+1] = gVertices[i].y;
-        vertexData[3*i+2] = gVertices[i].z;
+        vertexData[3 * i] = gVertices[i].x;
+        vertexData[3 * i + 1] = gVertices[i].y;
+        vertexData[3 * i + 2] = gVertices[i].z;
 
         minX = std::min(minX, gVertices[i].x);
         maxX = std::max(maxX, gVertices[i].x);
@@ -421,18 +440,17 @@ void initVBO()
 
     for (int i = 0; i < gNormals.size(); ++i)
     {
-        normalData[3*i] = gNormals[i].x;
-        normalData[3*i+1] = gNormals[i].y;
-        normalData[3*i+2] = gNormals[i].z;
+        normalData[3 * i] = gNormals[i].x;
+        normalData[3 * i + 1] = gNormals[i].y;
+        normalData[3 * i + 2] = gNormals[i].z;
     }
 
     for (int i = 0; i < gFaces.size(); ++i)
     {
-        indexData[3*i] = gFaces[i].vIndex[0];
-        indexData[3*i+1] = gFaces[i].vIndex[1];
-        indexData[3*i+2] = gFaces[i].vIndex[2];
+        indexData[3 * i] = gFaces[i].vIndex[0];
+        indexData[3 * i + 1] = gFaces[i].vIndex[1];
+        indexData[3 * i + 2] = gFaces[i].vIndex[2];
     }
-
 
     glBufferData(GL_ARRAY_BUFFER, gVertexDataSizeInBytes + gNormalDataSizeInBytes, 0, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, gVertexDataSizeInBytes, vertexData);
@@ -446,13 +464,12 @@ void initVBO()
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
-
 }
 
 void initFonts(int windowWidth, int windowHeight)
 {
     // Set OpenGL options
-    //glEnable(GL_CULL_FACE);
+    // glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -479,12 +496,12 @@ void initFonts(int windowWidth, int windowHeight)
     FT_Set_Pixel_Sizes(face, 0, 48);
 
     // Disable byte-alignment restriction
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     // Load first 128 characters of ASCII set
     for (GLubyte c = 0; c < 128; c++)
     {
-        // Load character glyph 
+        // Load character glyph
         if (FT_Load_Char(face, c, FT_LOAD_RENDER))
         {
             std::cout << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
@@ -495,16 +512,15 @@ void initFonts(int windowWidth, int windowHeight)
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexImage2D(
-                GL_TEXTURE_2D,
-                0,
-                GL_RED,
-                face->glyph->bitmap.width,
-                face->glyph->bitmap.rows,
-                0,
-                GL_RED,
-                GL_UNSIGNED_BYTE,
-                face->glyph->bitmap.buffer
-                );
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            face->glyph->bitmap.width,
+            face->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            face->glyph->bitmap.buffer);
         // Set texture options
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -515,8 +531,7 @@ void initFonts(int windowWidth, int windowHeight)
             texture,
             glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
             glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
-            face->glyph->advance.x
-        };
+            face->glyph->advance.x};
         Characters.insert(std::pair<GLchar, Character>(c, character));
     }
 
@@ -538,10 +553,10 @@ void initFonts(int windowWidth, int windowHeight)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void init() 
+void init()
 {
-	//ParseObj("armadillo.obj");
-	ParseObj(filename);
+    // ParseObj("armadillo.obj");
+    ParseObj(filename);
 
     glEnable(GL_DEPTH_TEST);
     initShaders();
@@ -551,25 +566,25 @@ void init()
 
 void drawModel()
 {
-	glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, gVertexAttribBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gIndexBuffer);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(gVertexDataSizeInBytes));
 
-	glDrawElements(GL_TRIANGLES, gFaces.size() * 3, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, gFaces.size() * 3, GL_UNSIGNED_INT, 0);
 }
 
-void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
+void renderText(const std::string &text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color)
 {
-    // Activate corresponding render state	
+    // Activate corresponding render state
     glUseProgram(gProgram[2]);
     glUniform3f(glGetUniformLocation(gProgram[2], "textColor"), color.x, color.y, color.z);
     glActiveTexture(GL_TEXTURE0);
 
     // Iterate through all characters
     std::string::const_iterator c;
-    for (c = text.begin(); c != text.end(); c++) 
+    for (c = text.begin(); c != text.end(); c++)
     {
         Character ch = Characters[*c];
 
@@ -581,14 +596,13 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
 
         // Update VBO for each character
         GLfloat vertices[6][4] = {
-            { xpos,     ypos + h,   0.0, 0.0 },            
-            { xpos,     ypos,       0.0, 1.0 },
-            { xpos + w, ypos,       1.0, 1.0 },
+            {xpos, ypos + h, 0.0, 0.0},
+            {xpos, ypos, 0.0, 1.0},
+            {xpos + w, ypos, 1.0, 1.0},
 
-            { xpos,     ypos + h,   0.0, 0.0 },
-            { xpos + w, ypos,       1.0, 1.0 },
-            { xpos + w, ypos + h,   1.0, 0.0 }           
-        };
+            {xpos, ypos + h, 0.0, 0.0},
+            {xpos + w, ypos, 1.0, 1.0},
+            {xpos + w, ypos + h, 1.0, 0.0}};
 
         // Render glyph texture over quad
         glBindTexture(GL_TEXTURE_2D, ch.TextureID);
@@ -597,7 +611,7 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
         glBindBuffer(GL_ARRAY_BUFFER, gTextVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // Be sure to use glBufferSubData and not glBufferData
 
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
+        // glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         // Render quad
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -609,18 +623,23 @@ void renderText(const std::string& text, GLfloat x, GLfloat y, GLfloat scale, gl
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-
-int getRandomIndex() {
+int getRandomIndex()
+{
     int num = (rand() % (2 - 0 + 1)) + 0;
-    if (num==2) {num=3;}
+    if (num == 2)
+    {
+        num = 3;
+    }
     return num;
 }
 
-int get_explosion_count(){
+int get_explosion_count()
+{
     int res = 0;
-    for(int i = 0; i < rs; i++)
-        for(int j = 0; j < cs; j++){
-            if(grid[i][j].matched)
+    for (int i = 0; i < rs; i++)
+        for (int j = 0; j < cs; j++)
+        {
+            if (grid[i][j].matched)
                 res++;
         }
     return res;
@@ -633,48 +652,53 @@ void display()
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	// static float angle = 0;
-    glm::mat4 R,S,T;
-    float aspect_ratio = 1.*gHeight/gWidth;
-    double xprime, yprime;
-    int curr_idx = 0;
-    colorMatch();
+    // static float angle = 0;
+    glm::mat4 R, S, T;
+    // colorMatch();
 
     int explosion_count = get_explosion_count();
-    if(explosion_count > 0)
+    if (explosion_count > 0)
         animation = true;
-    if(scale == 50){
-        if(explosion_count >= 3){
+    if (scale == 50)
+    {
+        if (explosion_count >= 3)
+        {
             score += explosion_count;
         }
 
         scale = 0;
 
-        for(int j = 0; j < cs; j++){
+        for (int j = 0; j < cs; j++)
+        {
             bool shift = false;
             int shift_count = 1;
 
-            for(int i = rs -1; i >= 0; i--){
-                if(!grid[i][j].matched && shift == false){
+            for (int i = rs - 1; i >= 0; i--)
+            {
+                if (!grid[i][j].matched && shift == false)
+                {
                     grid[i][j].distance = 0;
                     continue;
                 }
 
                 shift = true;
 
-                while( (i - shift_count) >= 0){
-                    if(!grid[i-shift_count][j].matched){
-                        grid[i][j].color = grid[i-shift_count][j].color;
+                while ((i - shift_count) >= 0)
+                {
+                    if (!grid[i - shift_count][j].matched)
+                    {
+                        grid[i][j].color = grid[i - shift_count][j].color;
                         // be sure about following
-                        progs[i][j] = progs[i-shift_count][j];
+                        progs[i][j] = progs[i - shift_count][j];
                         break;
                     }
                     shift_count++;
                 }
 
-                grid[i][j].distance = (shift_count * 20.0f)/(0.05f*rs);
+                grid[i][j].distance = (shift_count * 20.0f) / (0.05f * rs);
 
-                if((i - shift_count) < 0){
+                if ((i - shift_count) < 0)
+                {
                     int idx = getRandomIndex();
                     GLuint prog = gProgram[idx];
                     progs[i][j] = prog;
@@ -682,36 +706,42 @@ void display()
                 }
             }
         }
-        for(int i = 0; i < rs; i++)
-            for(int j = 0; j < cs; j++)
+        for (int i = 0; i < rs; i++)
+            for (int j = 0; j < cs; j++)
                 grid[i][j].matched = false;
         slide = true;
     }
 
-    if(explosion_count > 0)
+    if (explosion_count > 0)
         scale += 1;
     int zeros_count = 0;
-    for(int i = 0; i < rs; i++){
-        for(int j = 0; j < cs; j++){
+    for (int i = 0; i < rs; i++)
+    {
+        for (int j = 0; j < cs; j++)
+        {
             glUseProgram(progs[i][j]);
-            glm::mat4 S = glm::scale(glm::mat4(1.f), glm::vec3(3.5f / max(cs, rs) ) );
-            if(grid[i][j].matched == true){
-                 glm::mat4 extraScale = glm::scale(glm::mat4(1.f), glm::vec3(1.f + 0.01f * scale));
+            glm::mat4 S = glm::scale(glm::mat4(1.f), glm::vec3(3.5f / max(cs, rs)));
+            if (grid[i][j].matched == true)
+            {
+                glm::mat4 extraScale = glm::scale(glm::mat4(1.f), glm::vec3(1.f + 0.01f * scale));
                 S = extraScale * S;
             }
 
             float shifting_factor = 0;
 
-            if(grid[i][j].distance > 0){
-                shifting_factor = 0.05*grid[i][j].distance;
+            if (grid[i][j].distance > 0)
+            {
+                shifting_factor = 0.05 * grid[i][j].distance;
                 grid[i][j].distance--;
-            }else{
+            }
+            else
+            {
                 zeros_count++;
             }
-
-            glm::mat4 T = glm::translate(glm::mat4(1.f), glm::vec3(-10.f + (20.0f/cs)*(j + 0.5f), 10.f - (19.0f/rs)*(i + 0.5f) + shifting_factor, -10.f));
+            std::cout << "xpos: " << (-10.f + (20.0f / cs) * (j + 0.5f)) << " ypos: " << 10.f - (19.0f / rs) * (i + 0.5f) + shifting_factor << std::endl;
+            glm::mat4 T = glm::translate(glm::mat4(1.f), glm::vec3(-10.f + (20.0f / cs) * (j + 0.5f), 10.f - (19.0f / rs) * (i + 0.5f) + shifting_factor, -10.f));
             glm::mat4 R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
-            glm::mat4 modelMat =  T * R * S;
+            glm::mat4 modelMat = T * R * S;
             glm::mat4 modelMatInv = glm::transpose(glm::inverse(modelMat));
             glm::mat4 perspMat = glm::ortho(-10.f, 10.f, -10.f, 10.f, -20.f, 20.f);
 
@@ -725,22 +755,22 @@ void display()
         }
     }
 
-    if(zeros_count == rs*cs && slide ){
+    if (zeros_count == rs * cs && slide)
+    {
         explosion_check = false;
         slide = false;
     }
 
     std::string moves_str = "Moves: " + std::to_string(moves);
     std::string scores_str = "Score: " + std::to_string(score);
-    renderText(moves_str, 0, 0, 1, glm::vec3(1,1,0));
-    renderText(scores_str,300,0,1, glm::vec3(1,1,0));
+    renderText(moves_str, 0, 0, 1, glm::vec3(1, 1, 0));
+    renderText(scores_str, 300, 0, 1, glm::vec3(1, 1, 0));
     assert(glGetError() == GL_NO_ERROR);
 
-	angle += 0.5;
-  
+    angle += 0.5;
 }
 
-void reshape(GLFWwindow* window, int w, int h)
+void reshape(GLFWwindow *window, int w, int h)
 {
     w = w < 1 ? 1 : w;
     h = h < 1 ? 1 : h;
@@ -751,7 +781,7 @@ void reshape(GLFWwindow* window, int w, int h)
     glViewport(0, 0, w, h);
 }
 
-void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
+void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     {
@@ -763,15 +793,16 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         // reset distance
 
         // reset explosion info
-        for(int i = 0; i < rs; i++)
-            for(int j = 0; j < cs; j++){
+        for (int i = 0; i < rs; i++)
+            for (int j = 0; j < cs; j++)
+            {
                 grid[i][j].matched = false;
                 grid[i][j].distance = 0;
                 int idx = getRandomIndex();
                 GLuint prog = gProgram[idx];
                 progs[i][j] = prog;
                 grid[i][j].color = idx;
-            }        
+            }
         explosion_check = false;
         slide = false;
         animation = false;
@@ -780,22 +811,25 @@ void keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
         moves = 0;
         score = 0;
     }
-    
 }
 
-void mainLoop(GLFWwindow* window)
+void mainLoop(GLFWwindow *window)
 {
-    
-    for(int i = 0; i < rs; i++) {
+
+    for (int i = 0; i < rs; i++)
+    {
         vector<GLuint> empty_vec;
         progs.push_back(empty_vec);
-        for(int j = 0; j < cs; j++) {
+        for (int j = 0; j < cs; j++)
+        {
             GLuint dum = 0;
             progs[i].push_back(dum);
         }
     }
-    for(int i = 0; i < rs; i++) {
-        for(int j = 0; j < cs; j++) {
+    for (int i = 0; i < rs; i++)
+    {
+        for (int j = 0; j < cs; j++)
+        {
             int idx = getRandomIndex();
             GLuint prog = gProgram[idx];
             progs[i][j] = prog;
@@ -810,23 +844,27 @@ void mainLoop(GLFWwindow* window)
     }
 }
 
-static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos){
-    std::cout<<"Cursor xpos: "<<xpos<<" ypos: "<<ypos<<std::endl;
+static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos)
+{
+    std::cout << "Cursor xpos: " << xpos << " ypos: " << ypos << std::endl;
 }
 
-static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods){
-    if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !slide && explosion_check && !animation ){
+static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !slide && explosion_check && !animation)
+    {
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
-        grid[ypos/(gHeight*0.95f)*rs][xpos/gWidth*cs].matched = true;
+        grid[ypos / (gHeight * 0.95f) * rs][xpos / gWidth * cs].matched = true;
         moves++;
     }
 }
 
-int main(int argc, char** argv)   // Create Main Function For Bringing It All Together
+int main(int argc, char **argv) // Create Main Function For Bringing It All Together
 {
-    if(argc != 4){
-        std::cout<<"Correct usage: ./hw3 [row_size] [column_size] [.obj file]\n";
+    if (argc != 4)
+    {
+        std::cout << "Correct usage: ./hw3 [row_size] [column_size] [.obj file]\n";
         exit(1);
     }
     rs = atoi(argv[1]);
@@ -834,12 +872,12 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
     filename = std::string(argv[3]);
     // init grid
     grid.resize(rs);
-    for(size_t i = 0; i < rs; i++){
+    for (size_t i = 0; i < rs; i++)
+    {
         grid[i] = std::vector<Obj>(cs);
     }
 
-
-    GLFWwindow* window;
+    GLFWwindow *window;
     if (!glfwInit())
     {
         exit(-1);
@@ -847,8 +885,8 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     window = glfwCreateWindow(gWidth, gHeight, "Simple Example", NULL, NULL);
 
@@ -869,9 +907,9 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
     }
 
     char rendererInfo[512] = {0};
-    strcpy(rendererInfo, (const char*) glGetString(GL_RENDERER));
+    strcpy(rendererInfo, (const char *)glGetString(GL_RENDERER));
     strcat(rendererInfo, " - ");
-    strcat(rendererInfo, (const char*) glGetString(GL_VERSION));
+    strcat(rendererInfo, (const char *)glGetString(GL_VERSION));
     glfwSetWindowTitle(window, rendererInfo);
 
     init();
@@ -882,11 +920,10 @@ int main(int argc, char** argv)   // Create Main Function For Bringing It All To
     glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     reshape(window, gWidth, gHeight); // need to call this once ourselves
-    mainLoop(window); // this does not return unless the window is closed
+    mainLoop(window);                 // this does not return unless the window is closed
 
     glfwDestroyWindow(window);
     glfwTerminate();
 
     return 0;
 }
-
