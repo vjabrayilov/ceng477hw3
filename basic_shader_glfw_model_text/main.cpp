@@ -738,7 +738,7 @@ void display()
             {
                 zeros_count++;
             }
-            std::cout << "xpos: " << (-10.f + (20.0f / cs) * (j + 0.5f)) << " ypos: " << 10.f - (19.0f / rs) * (i + 0.5f) + shifting_factor << std::endl;
+            // std::cout << "xpos: " << (-10.f + (20.0f / cs) * (j + 0.5f)) << " ypos: " << 10.f - (19.0f / rs) * (i + 0.5f) + shifting_factor << std::endl;
             glm::mat4 T = glm::translate(glm::mat4(1.f), glm::vec3(-10.f + (20.0f / cs) * (j + 0.5f), 10.f - (19.0f / rs) * (i + 0.5f) + shifting_factor, -10.f));
             glm::mat4 R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
             glm::mat4 modelMat = T * R * S;
