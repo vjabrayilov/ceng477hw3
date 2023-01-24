@@ -119,13 +119,11 @@ void colorMatch()
     }
 
     int current_color;
-    int count = 0;
 
     for (int i = 0; i < rs; i++)
     {
         current_color = grid[i][0].color;
-        count++;
-
+        int count = 1;
         for (int j = 1; j < cs; j++)
         {
 
@@ -147,13 +145,12 @@ void colorMatch()
                 current_color = grid[i][j].color;
             }
         }
-        count = 0;
     }
 
     for (int j = 0; j < cs; j++)
     {
         current_color = grid[0][j].color;
-        count++;
+        int count = 1;
 
         for (int i = 1; i < rs; i++)
         {
@@ -176,7 +173,6 @@ void colorMatch()
                 current_color = grid[i][j].color;
             }
         }
-        count = 0;
     }
 
     explosion_check = true;
@@ -658,17 +654,14 @@ void display()
     glClearStencil(0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    // static float angle = 0;
     glm::mat4 R, S, T;
     colorMatch();
 
     int explosion_count = get_explosion_count();
-    // std::cout << "explosion_count: " << explosion_count << std::endl;
     if (explosion_count > 0)
         animation = true;
     else
         animation = false;
-    // std::cout << "animation: " << animation << std::endl;
     if (scale == 50)
     {
         if (explosion_count >= 3)
@@ -698,7 +691,6 @@ void display()
                     if (!grid[i - shift_count][j].matched)
                     {
                         grid[i][j].color = grid[i - shift_count][j].color;
-                        // be sure about following
                         progs[i][j] = progs[i - shift_count][j];
                         break;
                     }
@@ -748,7 +740,6 @@ void display()
             {
                 zeros_count++;
             }
-            // std::cout << "xpos: " << (-10.f + (20.0f / cs) * (j + 0.5f)) << " ypos: " << 10.f - (19.0f / rs) * (i + 0.5f) + shifting_factor << std::endl;
             glm::mat4 T = glm::translate(glm::mat4(1.f), glm::vec3(-10.f + (20.0f / cs) * (j + 0.5f), 10.f - (19.0f / rs) * (i + 0.5f) + shifting_factor, -10.f));
             glm::mat4 R = glm::rotate(glm::mat4(1.f), glm::radians(angle), glm::vec3(0, 1, 0));
             glm::mat4 modelMat = T * R * S;
@@ -767,7 +758,6 @@ void display()
 
     if (zeros_count == rs * cs && slide)
     {
-        std::cout << "num zero check\n";
         explosion_check = false;
         slide = false;
     }
@@ -801,9 +791,6 @@ void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods)
     else if (key == GLFW_KEY_R && action == GLFW_PRESS)
     {
 
-        // reset distance
-
-        // reset explosion info
         for (int i = 0; i < rs; i++)
             for (int j = 0; j < cs; j++)
             {
@@ -855,21 +842,15 @@ void mainLoop(GLFWwindow *window)
     }
 }
 
-static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos)
-{
-    std::cout << "Cursor xpos: " << xpos << " ypos: " << ypos << std::endl;
-}
 
 static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
 {
-    std::cout << "slide: " << slide << " explosion check: " << explosion_check << " animation: " << animation << std::endl;
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && !slide && explosion_check && !animation)
     {
         double xpos, ypos;
         glfwGetCursorPos(window, &xpos, &ypos);
         grid[ypos / (gHeight * 0.95f) * rs][xpos / gWidth * cs].matched = true;
         moves++;
-        std::cout << "Mouse click xpos: " << xpos << " ypos: " << ypos << std::endl;
     }
 }
 
@@ -880,8 +861,8 @@ int main(int argc, char **argv) // Create Main Function For Bringing It All Toge
         std::cout << "Correct usage: ./hw3 [row_size] [column_size] [.obj file]\n";
         exit(1);
     }
-    rs = atoi(argv[1]);
-    cs = atoi(argv[2]);
+    cs = atoi(argv[1]);
+    rs = atoi(argv[2]);
     filename = std::string(argv[3]);
     // init grid
     grid.resize(rs);
@@ -898,8 +879,6 @@ int main(int argc, char **argv) // Create Main Function For Bringing It All Toge
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-    // glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     window = glfwCreateWindow(gWidth, gHeight, "Simple Example", NULL, NULL);
 
